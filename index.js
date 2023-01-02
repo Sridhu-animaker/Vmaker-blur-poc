@@ -16,9 +16,17 @@ var rightScreenEdge, bottomScreenEdge;
 
 var b, x, y;
 
-var redraw = false;
+var mouse = {
+    x: 0,
+    y: 0,
+    startX: 0,
+    startY: 0
+};
 
-var pane = document.getElementById('pane');
+var rectangleElement = null;
+var counter = 0;
+
+var pane = null; /* document.getElementById('pane'); */
 
 
 // Mouse events
@@ -34,24 +42,36 @@ function onMouseDown(e) {
 
 function onDown(e) {
     calc(e);
-    // if (e.target.className)
-    var isResizing = onRightEdge || onBottomEdge || onTopEdge || onLeftEdge;
-    console.log('Before==',clicked)
+    console.log(e.target.className)
+    if (e.target.className != 'pane') {
+        mouse.startX = mouse.x;
+        mouse.startY = mouse.y;
+        rectangleElement = document.createElement('div');
+        rectangleElement.className = 'pane';
+        rectangleElement.id = `rect${counter++}`;
+        document.body.appendChild(rectangleElement)
+        document.body.style.cursor = "crosshair";
+    } else {
+        pane = document.getElementById(e.target.id);
+        var isResizing = onRightEdge || onBottomEdge || onTopEdge || onLeftEdge;
+        console.log('Before==', clicked)
 
-    clicked = {
-        x: x,
-        y: y,
-        cx: e.clientX,
-        cy: e.clientY,
-        w: b.width,
-        h: b.height,
-        isResizing: isResizing,
-        isMoving: !isResizing /* && canMove() */,
-        onTopEdge: onTopEdge,
-        onLeftEdge: onLeftEdge,
-        onRightEdge: onRightEdge,
-        onBottomEdge: onBottomEdge
-    };
+        clicked = {
+            x: x,
+            y: y,
+            cx: e.clientX,
+            cy: e.clientY,
+            w: b.width,
+            h: b.height,
+            isResizing: isResizing,
+            isMoving: !isResizing /* && canMove() */,
+            onTopEdge: onTopEdge,
+            onLeftEdge: onLeftEdge,
+            onRightEdge: onRightEdge,
+            onBottomEdge: onBottomEdge
+        };
+    }
+
     console.log(clicked)
 }
 
@@ -61,90 +81,94 @@ function canMove() {
 }
 
 function calc(e) {
-    b = pane.getBoundingClientRect();
-    x = e.clientX - b.left;
-    y = e.clientY - b.top;
+    mouse.x = e.clientX + document.body.scrollLeft;
+    mouse.y = e.clientY + document.body.scrollTop;
+    if (pane != null) {
 
-    onTopEdge = y < MARGINS;
-    onLeftEdge = x < MARGINS;
-    onRightEdge = x >= b.width - MARGINS;
-    onBottomEdge = y >= b.height - MARGINS;
+        b = pane.getBoundingClientRect();
+        x = e.clientX - b.left;
+        y = e.clientY - b.top;
+        onTopEdge = y < MARGINS;
+        onLeftEdge = x < MARGINS;
+        onRightEdge = x >= b.width - MARGINS;
+        onBottomEdge = y >= b.height - MARGINS;
 
-    rightScreenEdge = window.innerWidth - MARGINS;
-    bottomScreenEdge = window.innerHeight - MARGINS;
+        rightScreenEdge = window.innerWidth - MARGINS;
+        bottomScreenEdge = window.innerHeight - MARGINS;
+    }
+
 }
 
 var e;
 
 function onMove(ee) {
+    pane = document.getElementById(ee.target.id);
     calc(ee);
-
-    console.log(ee)
     e = ee;
 
-    redraw = true;
-
+    if (rectangleElement !== null) {
+        rectangleElement.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
+        rectangleElement.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
+        rectangleElement.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+        rectangleElement.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+    }
 }
 
 function animate() {
 
     requestAnimationFrame(animate);
+    if (pane != null) {
 
-    if (!redraw) return;
+        if (clicked && clicked.isResizing) {
 
-    redraw = false;
+            if (clicked.onRightEdge) pane.style.width = Math.max(x, minWidth) + 'px';
+            if (clicked.onBottomEdge) pane.style.height = Math.max(y, minHeight) + 'px';
 
-    if (clicked && clicked.isResizing) {
-
-        if (clicked.onRightEdge) pane.style.width = Math.max(x, minWidth) + 'px';
-        if (clicked.onBottomEdge) pane.style.height = Math.max(y, minHeight) + 'px';
-
-        if (clicked.onLeftEdge) {
-            var currentWidth = Math.max(clicked.cx - e.clientX + clicked.w, minWidth);
-            if (currentWidth > minWidth) {
-                pane.style.width = currentWidth + 'px';
-                pane.style.left = e.clientX + 'px';
+            if (clicked.onLeftEdge) {
+                var currentWidth = Math.max(clicked.cx - e.clientX + clicked.w, minWidth);
+                if (currentWidth > minWidth) {
+                    pane.style.width = currentWidth + 'px';
+                    pane.style.left = e.clientX + 'px';
+                }
             }
+
+            if (clicked.onTopEdge) {
+                var currentHeight = Math.max(clicked.cy - e.clientY + clicked.h, minHeight);
+                if (currentHeight > minHeight) {
+                    pane.style.height = currentHeight + 'px';
+                    pane.style.top = e.clientY + 'px';
+                }
+            }
+            return;
         }
 
-        if (clicked.onTopEdge) {
-            var currentHeight = Math.max(clicked.cy - e.clientY + clicked.h, minHeight);
-            if (currentHeight > minHeight) {
-                pane.style.height = currentHeight + 'px';
-                pane.style.top = e.clientY + 'px';
-            }
+        if (clicked && clicked.isMoving) {
+
+            // moving
+            pane.style.top = (e.clientY - clicked.y + document.body.scrollTop) + 'px';
+            pane.style.left = (e.clientX - clicked.x + document.body.scrollLeft) + 'px';
+
+            return;
         }
 
-        // hintHide();
+        // This code executes when mouse moves without clicking
 
-        return;
-    }
-
-    if (clicked && clicked.isMoving) {
-
-        // moving
-        pane.style.top = (e.clientY - clicked.y + document.body.scrollTop) + 'px';
-        pane.style.left = (e.clientX - clicked.x + document.body.scrollLeft) + 'px';
-
-        return;
-    }
-
-    // This code executes when mouse moves without clicking
-
-    // style cursor
-    if (onRightEdge && onBottomEdge || onLeftEdge && onTopEdge) {
-        pane.style.cursor = 'nwse-resize';
-    } else if (onRightEdge && onTopEdge || onBottomEdge && onLeftEdge) {
-        pane.style.cursor = 'nesw-resize';
-    } else if (onRightEdge || onLeftEdge) {
-        pane.style.cursor = 'ew-resize';
-    } else if (onBottomEdge || onTopEdge) {
-        pane.style.cursor = 'ns-resize';
-    } /* else if (canMove()) {
+        // style cursor
+        if (onRightEdge && onBottomEdge || onLeftEdge && onTopEdge) {
+            pane.style.cursor = 'nwse-resize';
+        } else if (onRightEdge && onTopEdge || onBottomEdge && onLeftEdge) {
+            pane.style.cursor = 'nesw-resize';
+        } else if (onRightEdge || onLeftEdge) {
+            pane.style.cursor = 'ew-resize';
+        } else if (onBottomEdge || onTopEdge) {
+            pane.style.cursor = 'ns-resize';
+        } /* else if (canMove()) {
         pane.style.cursor = 'move';
     } */ else {
-        pane.style.cursor = 'move';
+            pane.style.cursor = 'move';
+        }
     }
+
 }
 
 animate();
@@ -153,4 +177,6 @@ function onUp(e) {
     calc(e);
     clicked = null;
 
+    rectangleElement = null;
+    document.body.style.cursor = "default";
 }
