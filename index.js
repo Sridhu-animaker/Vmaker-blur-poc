@@ -11,7 +11,6 @@ var MARGINS = 4;
 var clicked = null;
 var onRightEdge, onBottomEdge, onLeftEdge, onTopEdge;
 
-var rightScreenEdge, bottomScreenEdge;
 
 
 var b, x, y;
@@ -91,9 +90,6 @@ function calc(e) {
         onLeftEdge = x < MARGINS;
         onRightEdge = x >= b.width - MARGINS;
         onBottomEdge = y >= b.height - MARGINS;
-
-        rightScreenEdge = window.innerWidth - MARGINS;
-        bottomScreenEdge = window.innerHeight - MARGINS;
     }
 
 }
