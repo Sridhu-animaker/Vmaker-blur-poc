@@ -1,8 +1,8 @@
 "use strict";
 
 // Minimum resizable area
-var minWidth = 60;
-var minHeight = 40;
+var minWidth = 10;
+var minHeight = 10;
 
 // Thresholds
 var MARGINS = 4;
@@ -26,7 +26,7 @@ var mouse = {
 var rectangleElement = null;
 var counter = 0;
 
-var pane = null; /* document.getElementById('pane'); */
+var pane = null;
 var targetElementId = null;
 
 // Mouse events
@@ -42,7 +42,6 @@ function onMouseDown(e) {
 
 function onDown(e) {
     calc(e);
-    console.log(e.target.className)
     if (e.target.className != 'pane') {
         mouse.startX = mouse.x;
         mouse.startY = mouse.y;
@@ -53,9 +52,9 @@ function onDown(e) {
         document.body.style.cursor = "crosshair";
     } else {
         pane = document.getElementById(e.target.id);
+        pane.style.zIndex = 2;
         targetElementId = e.target.id;
         var isResizing = onRightEdge || onBottomEdge || onTopEdge || onLeftEdge;
-        console.log('Before==', clicked)
 
         clicked = {
             x: x,
@@ -73,7 +72,6 @@ function onDown(e) {
         };
     }
 
-    console.log(clicked)
 }
 
 function canMove() {
@@ -103,13 +101,14 @@ function calc(e) {
 var e;
 
 function onMove(ee) {
-    if (targetElementId == ee.target.id || !ee.target.id.includes('rect')) {
+    calc(ee);
+    e = ee;
+
+    if (!ee.target.id.includes('rect')) {
         pane = document.getElementById(targetElementId);
     } else {
         pane = document.getElementById(ee.target.id);
     }
-    calc(ee);
-    e = ee;
 
     if (rectangleElement !== null) {
         rectangleElement.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
@@ -179,7 +178,7 @@ animate();
 function onUp(e) {
     calc(e);
     clicked = null;
-
+    pane.style.zIndex = 1
     rectangleElement = null;
     document.body.style.cursor = "default";
 }
