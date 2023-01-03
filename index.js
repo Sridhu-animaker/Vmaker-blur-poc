@@ -27,7 +27,7 @@ var rectangleElement = null;
 var counter = 0;
 
 var pane = null; /* document.getElementById('pane'); */
-
+var targetElementId = null;
 
 // Mouse events
 document.addEventListener('mousedown', onMouseDown);
@@ -53,6 +53,7 @@ function onDown(e) {
         document.body.style.cursor = "crosshair";
     } else {
         pane = document.getElementById(e.target.id);
+        targetElementId = e.target.id;
         var isResizing = onRightEdge || onBottomEdge || onTopEdge || onLeftEdge;
         console.log('Before==', clicked)
 
@@ -64,7 +65,7 @@ function onDown(e) {
             w: b.width,
             h: b.height,
             isResizing: isResizing,
-            isMoving: !isResizing /* && canMove() */,
+            isMoving: !isResizing,
             onTopEdge: onTopEdge,
             onLeftEdge: onLeftEdge,
             onRightEdge: onRightEdge,
@@ -102,7 +103,11 @@ function calc(e) {
 var e;
 
 function onMove(ee) {
-    pane = document.getElementById(ee.target.id);
+    if (targetElementId == ee.target.id || !ee.target.id.includes('rect')) {
+        pane = document.getElementById(targetElementId);
+    } else {
+        pane = document.getElementById(ee.target.id);
+    }
     calc(ee);
     e = ee;
 
@@ -162,9 +167,7 @@ function animate() {
             pane.style.cursor = 'ew-resize';
         } else if (onBottomEdge || onTopEdge) {
             pane.style.cursor = 'ns-resize';
-        } /* else if (canMove()) {
-        pane.style.cursor = 'move';
-    } */ else {
+        } else {
             pane.style.cursor = 'move';
         }
     }
